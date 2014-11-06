@@ -15,6 +15,8 @@
 # limitations under the License.
 
 namespace :murder do
+  HOST = "LC_ALL=C ifconfig | grep 'inet addr' | awk '{print $2}' | awk -F : '{print $2}' | head -1"
+
   desc <<-DESC
   Compresses the directory specified by the passed-in argument 'files_path' and creates a .torrent file identified by the 'tag' argument. Be sure to use the same 'tag' value with any following commands. Any .git directories will be skipped. Once completed, the .torrent will be downloaded to your local /tmp/TAG.tgz.torrent.
   DESC
@@ -53,7 +55,7 @@ namespace :murder do
   DESC
   task :start_seeding, :roles => :seeder do
     require_tag
-    run "SCREENRC=/dev/null SYSSCREENRC=/dev/null screen -dms 'seeder-#{tag}' python #{remote_murder_path}/murder_client.py seeder '#{filename}.torrent' '#{filename}' `LC_ALL=C host $HOSTNAME | awk '/has address/ {print $4}' | head -n 1`"
+    run "SCREENRC=/dev/null SYSSCREENRC=/dev/null screen -dms 'seeder-#{tag}' python #{remote_murder_path}/murder_client.py seeder '#{filename}.torrent' '#{filename}' `#{HOST}`"
   end
 
   desc <<-DESC
@@ -91,7 +93,7 @@ namespace :murder do
     end
 
     upload("#{filename}.torrent", "#{filename}.torrent", :via => :scp)
-    run "python #{remote_murder_path}/murder_client.py peer '#{filename}.torrent' '#{filename}' `LC_ALL=C host $CAPISTRANO:HOST$ | awk '/has address/ {print $4}' | head -n 1`"
+    run "python #{remote_murder_path}/murder_client.py peer '#{filename}.torrent' '#{filename}' `#{HOST}`"
 
     if ENV['path_is_file']
       run "cp #{filename} #{destination_path}"
